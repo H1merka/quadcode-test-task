@@ -20,3 +20,17 @@ When writing interactive animations, you must follow these rules to ensure high 
   
   const shouldReduceMotion = useReducedMotion();
   const transition = shouldReduceMotion ? { duration: 0 } : { type: "spring" };
+  ```
+
+## Rule 4: forwardRef for AnimatePresence Children
+- Any custom component rendered as a **direct child inside `AnimatePresence`** with `layout`/`exit` animations MUST be wrapped in `React.forwardRef` and forward the ref to its root `<m.div>` / `<motion.div>`.
+- Without it, `AnimatePresence` (`PopChild`) cannot measure the DOM node on unmount and React throws: `Warning: Function components cannot be given refs...`. Exit/reflow animations then silently break.
+- Correct pattern:
+  ```typescript
+  const NotificationCard = React.forwardRef<HTMLDivElement, CardProps>(
+    function NotificationCard(props, ref) {
+      return <m.div ref={ref} layout exit={{ opacity: 0 }}>{/* ... */}</m.div>;
+    }
+  );
+  ```
+- A bare `<m.div>` used directly (not wrapped in a custom component) already handles this internally — the rule only applies when you extract a custom component.

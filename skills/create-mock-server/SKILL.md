@@ -33,12 +33,13 @@ The input can be provided as:
 2. Copy and populate the templates:
   - Generate `./mock-sandbox/package.json` using `assets/package.json.template`, replacing placeholders like `{{project_name}}`.
   - Normalize the package name to lowercase kebab-case. If the project name is missing or unsafe for npm, fall back to `mock-sandbox`.
-  - Generate `./mock-sandbox/Dockerfile` using `assets/Dockerfile.template`.
+  - Generate `./mock-sandbox/Dockerfile` using `assets/Dockerfile.template` (based on `node:22-alpine` with a container `HEALTHCHECK` hitting `GET /_health`).
+  - Generate `./mock-sandbox/.dockerignore` using `assets/dockerignore.template` so a locally-installed `node_modules/` is never sent into the Docker build context.
   - Generate `./mock-sandbox/.gitignore` with a `node_modules/` entry (plus common Node artifacts) so installed dependencies are never committed.
 
 ### Step 3: Server Executable Generation (`server.js`)
 Generate the `./mock-sandbox/server.js` file. The code must strictly adhere to the following technical requirements:
-- Use standard `express`, `cors`, and `body-parser` packages.
+- Use standard `express` and `cors` packages. Parse request bodies with Express's built-in `express.json()` / `express.urlencoded()` middleware — do NOT add the deprecated standalone `body-parser` dependency (it has been bundled into Express since 4.16).
 - Implement a simple console middleware for request logging (logging method, path, and response status).
 - **Required (Advanced Behavior Integration):** Implement the control parameter logic defined in `references/mock-rules.md`:
   - **Delays:** If a query parameter `_delay=MILLISECONDS` or an HTTP header `X-Mock-Delay` is present, delay the response accordingly.
