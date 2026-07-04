@@ -1,0 +1,17 @@
+{
+  "name": "baseline-mock-server",
+  "version": "1.0.0",
+  "description": "Manually hand-written mock server for Task Manager API (Users + Tasks), built without the create-mock-server skill, for A/B comparison purposes.",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
