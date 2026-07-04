@@ -1,0 +1,779 @@
+openapi: 3.0.3
+info:
+  title: Task Manager API
+  description: >
+    Realistic OpenAPI contract used to test the `create-mock-server` skill.
+    Covers CRUD operations for Users and Tasks, standard success/error status
+    codes, and the mock-server control parameters `_delay` / `_status`
+    (also available as `X-Mock-Delay` / `X-Mock-Status` headers).
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api-support@example.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local mock server (create-mock-server default port)
+  - url: http://localhost:8080/api/v1
+    description: Local mock server with versioned base path
+
+tags:
+  - name: Users
+    description: User account management
+  - name: Tasks
+    description: Task tracking and assignment
+
+components:
+  parameters:
+    MockDelayParam:
+      name: _delay
+      in: query
+      required: false
+      description: >
+        Mock-server control parameter. Delays the response by the given
+        number of milliseconds to simulate network/server latency.
+      schema:
+        type: integer
+        minimum: 0
+        example: 2000
+    MockStatusParam:
+      name: _status
+      in: query
+      required: false
+      description: >
+        Mock-server control parameter. Forces the response to return the
+        given HTTP status code with a standardized error payload instead
+        of the normal success response.
+      schema:
+        type: integer
+        minimum: 400
+        maximum: 599
+        example: 500
+    MockDelayHeader:
+      name: X-Mock-Delay
+      in: header
+      required: false
+      description: Header equivalent of the `_delay` query parameter.
+      schema:
+        type: integer
+        minimum: 0
+        example: 2000
+    MockStatusHeader:
+      name: X-Mock-Status
+      in: header
+      required: false
+      description: Header equivalent of the `_status` query parameter.
+      schema:
+        type: integer
+        minimum: 400
+        maximum: 599
+        example: 500
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    LimitParam:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+    UserIdParam:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+    TaskIdParam:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+
+  schemas:
+    User:
+      type: object
+      required: [id, email, username, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        email:
+          type: string
+          format: email
+          example: jane.doe@example.com
+        username:
+          type: string
+          example: jane.doe
+        fullName:
+          type: string
+          example: Jane Doe
+        role:
+          type: string
+          enum: [admin, member, viewer]
+          example: member
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-14T09:32:11.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-03-02T17:05:44.000Z"
+
+    UserCreateRequest:
+      type: object
+      required: [email, username, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: jane.doe@example.com
+        username:
+          type: string
+          minLength: 3
+          maxLength: 32
+          example: jane.doe
+        fullName:
+          type: string
+          example: Jane Doe
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: S3curePass!
+        role:
+          type: string
+          enum: [admin, member, viewer]
+          default: member
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          example: Jane A. Doe
+        role:
+          type: string
+          enum: [admin, member, viewer]
+        isActive:
+          type: boolean
+
+    Task:
+      type: object
+      required: [id, title, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+        title:
+          type: string
+          example: Prepare Q3 roadmap presentation
+        description:
+          type: string
+          example: Draft slides covering roadmap milestones for Q3 planning meeting.
+        status:
+          type: string
+          enum: [todo, in_progress, blocked, done]
+          example: in_progress
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+          example: high
+        assigneeId:
+          type: string
+          format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          nullable: true
+        dueDate:
+          type: string
+          format: date
+          example: "2025-04-30"
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["roadmap", "q3", "presentation"]
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-02-10T08:15:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-02-18T12:40:22.000Z"
+
+    TaskCreateRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          example: Prepare Q3 roadmap presentation
+        description:
+          type: string
+          example: Draft slides covering roadmap milestones for Q3 planning meeting.
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+          default: medium
+        assigneeId:
+          type: string
+          format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        dueDate:
+          type: string
+          format: date
+          example: "2025-04-30"
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["roadmap", "q3"]
+
+    TaskUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [todo, in_progress, blocked, done]
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        assigneeId:
+          type: string
+          format: uuid
+          nullable: true
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          example: 42
+        totalPages:
+          type: integer
+          example: 5
+
+    Error:
+      type: object
+      required: [error, status, message, timestamp]
+      properties:
+        error:
+          type: boolean
+          example: true
+        status:
+          type: integer
+          example: 404
+        message:
+          type: string
+          example: "Simulated Mock Error for status code 404"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-03-10T10:12:33.512Z"
+        details:
+          type: array
+          description: Optional field-level validation errors (present on 400 responses).
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: email
+              message:
+                type: string
+                example: must be a valid email address
+
+  responses:
+    BadRequest:
+      description: Validation error - request body failed schema validation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: true
+            status: 400
+            message: "Validation failed for one or more fields"
+            timestamp: "2025-03-10T10:12:33.512Z"
+            details:
+              - field: email
+                message: must be a valid email address
+              - field: username
+                message: is required
+    Unauthorized:
+      description: Missing or invalid authentication credentials.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: true
+            status: 401
+            message: "Simulated Mock Error for status code 401"
+            timestamp: "2025-03-10T10:12:33.512Z"
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: true
+            status: 404
+            message: "Simulated Mock Error for status code 404"
+            timestamp: "2025-03-10T10:12:33.512Z"
+    InternalServerError:
+      description: Unexpected server-side error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: true
+            status: 500
+            message: "Simulated Mock Error for status code 500"
+            timestamp: "2025-03-10T10:12:33.512Z"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
+
+paths:
+  /users:
+    get:
+      tags: [Users]
+      summary: List users
+      description: Returns a paginated list of users. Supports mock delay/status overrides.
+      operationId: listUsers
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/MockDelayParam"
+        - $ref: "#/components/parameters/MockStatusParam"
+        - $ref: "#/components/parameters/MockDelayHeader"
+        - $ref: "#/components/parameters/MockStatusHeader"
+      responses:
+        "200":
+          description: A paginated list of users.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+              example:
+                data:
+                  - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    email: jane.doe@example.com
+                    username: jane.doe
+                    fullName: Jane Doe
+                    role: admin
+                    isActive: true
+                    createdAt: "2025-01-14T09:32:11.000Z"
+                    updatedAt: "2025-03-02T17:05:44.000Z"
+                  - id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                    email: john.smith@example.com
+                    username: john.smith
+                    fullName: John Smith
+                    role: member
+                    isActive: true
+                    createdAt: "2025-01-20T11:02:45.000Z"
+                    updatedAt: "2025-01-20T11:02:45.000Z"
+                pagination:
+                  page: 1
+                  limit: 10
+                  total: 2
+                  totalPages: 1
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Users]
+      summary: Create a new user
+      operationId: createUser
+      parameters:
+        - $ref: "#/components/parameters/MockDelayParam"
+        - $ref: "#/components/parameters/MockStatusParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreateRequest"
+            example:
+              email: new.user@example.com
+              username: new.user
+              fullName: New User
+              password: S3curePass!
+              role: member
+      responses:
+        "201":
+          description: User created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              example:
+                id: 1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed
+                email: new.user@example.com
+                username: new.user
+                fullName: New User
+                role: member
+                isActive: true
+                createdAt: "2025-03-10T10:00:00.000Z"
+                updatedAt: "2025-03-10T10:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/{userId}:
+    get:
+      tags: [Users]
+      summary: Get a user by ID
+      operationId: getUserById
+      parameters:
+        - $ref: "#/components/parameters/UserIdParam"
+        - $ref: "#/components/parameters/MockDelayParam"
+        - $ref: "#/components/parameters/MockStatusParam"
+      responses:
+        "200":
+          description: The requested user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              example:
+                id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                email: jane.doe@example.com
+                username: jane.doe
+                fullName: Jane Doe
+                role: admin
+                isActive: true
+                createdAt: "2025-01-14T09:32:11.000Z"
+                updatedAt: "2025-03-02T17:05:44.000Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      tags: [Users]
+      summary: Update an existing user
+      operationId: updateUser
+      parameters:
+        - $ref: "#/components/parameters/UserIdParam"
+        - $ref: "#/components/parameters/MockDelayParam"
+        - $ref: "#/components/parameters/MockStatusParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdateRequest"
+            example:
+              fullName: Jane A. Doe
+              role: admin
+              isActive: true
+      responses:
+        "200":
+          description: User updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              example:
+                id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                email: jane.doe@example.com
+                username: jane.doe
+                fullName: Jane A. Doe
+                role: admin
+                isActive: true
+                createdAt: "2025-01-14T09:32:11.000Z"
+                updatedAt: "2025-03-10T10:20:00.000Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Users]
+      summary: Delete a user
+      operationId: deleteUser
+      parameters:
+        - $ref: "#/components/parameters/UserIdParam"
+        - $ref: "#/components/parameters/MockDelayParam"
+        - $ref: "#/components/parameters/MockStatusParam"
+      responses:
+        "204":
+          description: User deleted successfully. No content returned.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /tasks:
+    get:
+      tags: [Tasks]
+      summary: List tasks
+      description: Returns a paginated, filterable list of tasks.
+      operationId: listTasks
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [todo, in_progress, blocked, done]
+        - name: assigneeId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/MockDelayParam"
+        - $ref: "#/components/parameters/MockStatusParam"
+        - $ref: "#/components/parameters/MockDelayHeader"
+        - $ref: "#/components/parameters/MockStatusHeader"
+      responses:
+        "200":
+          description: A paginated list of tasks.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Task"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+              example:
+                data:
+                  - id: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+                    title: Prepare Q3 roadmap presentation
+                    description: Draft slides covering roadmap milestones for Q3 planning meeting.
+                    status: in_progress
+                    priority: high
+                    assigneeId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    dueDate: "2025-04-30"
+                    tags: ["roadmap", "q3", "presentation"]
+                    createdAt: "2025-02-10T08:15:00.000Z"
+                    updatedAt: "2025-02-18T12:40:22.000Z"
+                  - id: 5f8d7a2e-6c3b-4e9a-8f1d-2a4b6c8d0e1f
+                    title: Fix login page validation bug
+                    description: Email field accepts invalid formats without error.
+                    status: todo
+                    priority: critical
+                    assigneeId: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                    dueDate: "2025-03-15"
+                    tags: ["bug", "frontend"]
+                    createdAt: "2025-03-01T14:22:10.000Z"
+                    updatedAt: "2025-03-01T14:22:10.000Z"
+                pagination:
+                  page: 1
+                  limit: 10
+                  total: 2
+                  totalPages: 1
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Tasks]
+      summary: Create a new task
+      operationId: createTask
+      parameters:
+        - $ref: "#/components/parameters/MockDelayParam"
+        - $ref: "#/components/parameters/MockStatusParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskCreateRequest"
+            example:
+              title: Write onboarding documentation
+              description: Create a step-by-step onboarding guide for new engineers.
+              priority: medium
+              assigneeId: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+              dueDate: "2025-05-01"
+              tags: ["docs", "onboarding"]
+      responses:
+        "201":
+          description: Task created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+              example:
+                id: 2e5b8f3a-1c4d-4a6e-9b2f-8d3c7a1e5f0b
+                title: Write onboarding documentation
+                description: Create a step-by-step onboarding guide for new engineers.
+                status: todo
+                priority: medium
+                assigneeId: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                dueDate: "2025-05-01"
+                tags: ["docs", "onboarding"]
+                createdAt: "2025-03-10T10:30:00.000Z"
+                updatedAt: "2025-03-10T10:30:00.000Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /tasks/{taskId}:
+    get:
+      tags: [Tasks]
+      summary: Get a task by ID
+      operationId: getTaskById
+      parameters:
+        - $ref: "#/components/parameters/TaskIdParam"
+        - $ref: "#/components/parameters/MockDelayParam"
+        - $ref: "#/components/parameters/MockStatusParam"
+      responses:
+        "200":
+          description: The requested task.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+              example:
+                id: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+                title: Prepare Q3 roadmap presentation
+                description: Draft slides covering roadmap milestones for Q3 planning meeting.
+                status: in_progress
+                priority: high
+                assigneeId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                dueDate: "2025-04-30"
+                tags: ["roadmap", "q3", "presentation"]
+                createdAt: "2025-02-10T08:15:00.000Z"
+                updatedAt: "2025-02-18T12:40:22.000Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    patch:
+      tags: [Tasks]
+      summary: Partially update a task
+      operationId: updateTask
+      parameters:
+        - $ref: "#/components/parameters/TaskIdParam"
+        - $ref: "#/components/parameters/MockDelayParam"
+        - $ref: "#/components/parameters/MockStatusParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdateRequest"
+            example:
+              status: done
+              priority: low
+      responses:
+        "200":
+          description: Task updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+              example:
+                id: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+                title: Prepare Q3 roadmap presentation
+                description: Draft slides covering roadmap milestones for Q3 planning meeting.
+                status: done
+                priority: low
+                assigneeId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                dueDate: "2025-04-30"
+                tags: ["roadmap", "q3", "presentation"]
+                createdAt: "2025-02-10T08:15:00.000Z"
+                updatedAt: "2025-03-10T11:00:00.000Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Tasks]
+      summary: Delete a task
+      operationId: deleteTask
+      parameters:
+        - $ref: "#/components/parameters/TaskIdParam"
+        - $ref: "#/components/parameters/MockDelayParam"
+        - $ref: "#/components/parameters/MockStatusParam"
+      responses:
+        "204":
+          description: Task deleted successfully. No content returned.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
