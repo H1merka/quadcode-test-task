@@ -1,0 +1,20 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install --omit=dev
+
+COPY server.js ./
+
+EXPOSE 8080
+
+ENV NODE_ENV=production
+ENV PORT=8080
+
+# Container-level health probe backed by the server's GET /_health endpoint.
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget -qO- http://localhost:8080/_health || exit 1
+
+CMD ["node", "server.js"]

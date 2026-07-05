@@ -1,0 +1,17 @@
+{
+  "name": "mock-sandbox",
+  "version": "1.0.0",
+  "description": "Auto-generated API Mock Sandbox by Quadcode.ai create-mock-server skill (source contract: mock-server-test.yaml — Task Manager API)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "private": true
+}
